@@ -7,6 +7,7 @@ DCIMフォルダにある特定の文字を含むファイルを転送するス�
 [Flashair Developers: CONFIG](https://flashair-developers.com/ja/documents/api/config)
 
 upload.cgi を使うのでUPLOAD=1を設定する。
+
 STAモードを使う場合はIP_Address, Subnet_Mask を設定するかDHCPの固定払い出しでアドレスを固定する
 
 ### カメラ側
