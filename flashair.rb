@@ -4,6 +4,7 @@
 require 'net/http'
 require 'uri'
 require 'optparse'
+require 'fileutils'
 
 module Main
   extend self
@@ -21,8 +22,8 @@ module Main
      remove = false if opt["remove"] == "off"
      overwrite = false
      overwrite = true if opt["overwrite"] == "on"
-     prefix = opt["prefix"] || ""
      filename = opt["file"] || "DSC_*"
+     dest_path = opt["dest"] || "#{Dir.pwd}/"
 
     fa = Flashair.new(args[0])
     files = fa.get_all_files(filename)
@@ -32,39 +33,43 @@ module Main
       exit 1
     end
 
-    out_path = get_output_dir(prefix, overwrite)
-    if out_path.nil?
+    out_dir = get_output_dir(dest_path, overwrite)
+    if out_dir.nil?
       puts "no output dir"
       exit (1)
     end
+    puts "download to #{out_dir}"
 
-    Dir.mkdir(out_path, 0777)
+    FileUtils.mkdir_p(out_dir)
 
     files.each do |file|
       outfile = file[:path].gsub(/\//,'_')
       outfile[0] = '' if outfile[0] == '_'
 
-      remove = ""
-      remove = "(rm)" if remove
-      puts "download #{file[:path]}#{remove} ==> #{out_path}/#{outfile}"
+      print "download #{file[:path]} ==> #{outfile}"
 
       body = fa.get_file_body(file)
 
-      File.open("#{out_path}/#{outfile}", 'w+b') do |f|
+      File.open("#{out_dir}/#{outfile}", 'w+b') do |f|
         f.write(body)
       end
 
-      fa.remove_file(file) if remove
+      if remove
+        fa.remove_file(file)
+        puts " (move)"
+      else
+        puts " (copy)"
+      end
     end
 
     0
   end
 
-  def get_output_dir(prefix = "", overwrite = false)
+  def get_output_dir(path, overwrite = false)
     today = Time.now.strftime("%Y%m%d")
 
     for cnt in 0..63
-      dir = "#{prefix}#{today}_#{cnt}"
+      dir = "#{path}#{today}_#{cnt}"
 
       return dir unless File.exists?(dir)
       return dir if overwrite
@@ -77,8 +82,8 @@ module Main
     puts "#{$0} [options] <ip addr>"
     puts "  --remove    {on|off}:on"
     puts "  --overwrite {on|off}:off"
-    puts "  --prefix    {<output directory's prefix>}"
     puts "  --file      {<filename regexp>}"
+    puts "  --dest      {<destination path>}:$PWD/"
     exit(1)
   end
 end
@@ -221,6 +226,6 @@ class Flashair
 end
 
 ## main
-opt = ARGV.getopts('h', 'remove:', 'overwrite:', "prefix:", "file:")
+opt = ARGV.getopts('h', 'remove:', 'overwrite:', "file:", "dest:")
 arg = ARGV
 Main.main(opt, arg)
