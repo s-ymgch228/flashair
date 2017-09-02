@@ -22,10 +22,15 @@ module Main
      remove = false if opt["remove"] == "off"
      overwrite = false
      overwrite = true if opt["overwrite"] == "on"
-     filename = opt["file"] || "DSC_*"
+     filename = opt["file"] || "DSC*"
      dest_path = opt["dest"] || "#{Dir.pwd}/"
+     help = opt["help"] || false
+     verbose = opt["verbose"] || false
+
+    usage if help
 
     fa = Flashair.new(args[0])
+    fa.set_verbose() if verbose
     files = fa.get_all_files(filename)
 
     if files.empty?
@@ -38,15 +43,18 @@ module Main
       puts "no output dir"
       exit (1)
     end
-    puts "download to #{out_dir}"
 
     FileUtils.mkdir_p(out_dir)
+
+    puts "Dir => #{out_dir}, #{files.length} files"
+    puts ""
 
     files.each do |file|
       outfile = file[:path].gsub(/\//,'_')
       outfile[0] = '' if outfile[0] == '_'
 
-      print "download #{file[:path]} ==> #{outfile}"
+      print "#{file[:path]}"
+      print ", " if verbose
 
       body = fa.get_file_body(file)
 
@@ -80,9 +88,11 @@ module Main
 
   def usage
     puts "#{$0} [options] <ip addr>"
+    puts "  --help"
+    puts "  --verbose"
     puts "  --remove    {on|off}:on"
     puts "  --overwrite {on|off}:off"
-    puts "  --file      {<filename regexp>}"
+    puts "  --file      {<filename regexp>}:'DSC*'"
     puts "  --dest      {<destination path>}:$PWD/"
     exit(1)
   end
@@ -117,6 +127,12 @@ class Flashair
     else
       @port = ""
     end
+
+    @verbose=false
+  end
+
+  def set_verbose
+    @verbose = true
   end
 
   def get_file_list(path = "/")
@@ -186,28 +202,27 @@ class Flashair
 
   def remove_file(file)
     success = true
-    print "protect on"
+    print "protect on" if @verbose
     out = _access("/upload.cgi", {"WRITEPROTECT"=>"ON"})
     if out.include?("Error")
-      puts " failed"
+      puts " failed" if @verbose
       success = false
       return success
     end
 
-    print ", remove"
+    print ", remove" if @verbose
     out = _access("/upload.cgi", {"DEL"=> "#{file[:path]}"})
     if out.include?("Error")
-      puts "failed"
+      puts "failed" if @verbose
       success = false
     end
 
-    print ", and protect off"
+    print ", and protect off" if @verbose
     out = _access("/upload.cgi", {"WRITEPROTECT"=>"OFF"})
     if out.include?("Error")
-      puts "failed"
+      puts "failed" if @verbose
       success = false
     end
-    puts ""
 
     success
   end
@@ -226,6 +241,7 @@ class Flashair
 end
 
 ## main
-opt = ARGV.getopts('h', 'remove:', 'overwrite:', "file:", "dest:")
+opt = ARGV.getopts('help', 'verbose', 'remove:',
+  'overwrite:', "file:", "dest:")
 arg = ARGV
 Main.main(opt, arg)
