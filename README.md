@@ -1,45 +1,25 @@
-# FlashAir file downloader
-DCIMフォルダにある特定の文字を含むファイルを転送するスクリプト
+## 内容物
+ - bin/fa-ls.rb
+  - Flashair にあるファイルを ls っぽく参照できるやつ
+ - bin/fa-cp.rb
+  - ファイルを flashair から ローカルにコピーする
+ - bin/fa-rm.rb
+  - flashair のファイルを削除する
+ - bin/flashaird.rb
+  - 正規表現に一致するファイルをローカルへ転送するデーモン
 
-## 初期設定
+flashair のファイルは絶対パス指定のみ可能
+fa-*.rb なスクリプトは、--ip <address> で flashair のIPアドレスを指定する
 
-### Flashair側
-[Flashair Developers: CONFIG](https://flashair-developers.com/ja/documents/api/config)
-
-upload.cgi を使うのでUPLOAD=1を設定する。
-
-STAモードを使う場合はIP_Address, Subnet_Mask を設定するかDHCPの固定払い出しでアドレスを固定する
-
-### カメラ側
-Power off タイマーをoffか最長にする
-
-## 使い方
-```
-> ruby flashair.rb -h
-flashair.rb [options] <ip addr>
-  --help
-  --verbose
-  --remove    {on|off}:on
-  --overwrite {on|off}:off
-  --file      {<filename regexp>}:'DSC*'
-  --dest      {<destination path>}:$PWD/
-```
- - remove    : 転送が終わったファイルをSDカードから削除する
- - overwrite : 出力先のディレクトリが被った場合にそのまま使う
- - file      : 転送するファイル名を正規表現で指定する
- - dest      : 出力先ディレクトリ名、ここのディレクトリの下に日付のディレクトリを作る
-
-```
-$ ruby flashair.rb  flashair
-download /DCIM/101D3400/DSC_0001.JPG(rm) ==> DCIM_101D3400_DSC_0001.JPG
-download /DCIM/101D3400/DSC_0002.JPG(rm) ==> DCIM_101D3400_DSC_0002.JPG
-download /DCIM/101D3400/DSC_0003.JPG(rm) ==> DCIM_101D3400_DSC_0003.JPG
-download /DCIM/101D3400/DSC_0004.JPG(rm) ==> DCIM_101D3400_DSC_0004.JPG
-$
-```
-ファイル名未指定時はDSCがつくファイルを転送します
-
-## その他
- - 通信が切れた場合はstack traceを吐きます
- - 削除時にWRITE PROTECT が ON のまま異常終了する場合があります
-   - 次回実行時にOFFになります
+## FreeNAS で flashaird を使う方法
+ 1. FreeNAS 上に jail を用意する
+ 2. ruby がなければ "pkg install ruby" でインストールする
+ 3. ssmtp を使っているので "pkg install ssmtp" でインストール、vi /usr/local/etc/ssmtp.conf で設定を作る
+ 4. 適当なところに git clone https://github.com/s-ymgch228/flashair.git する
+ 5. vi /example/path/flashair/etc/flashaird で etc/flashaird の command のパスを 3. のパスに変更する
+ 6. vi /example/path/flashair/bin/flashaird.rb で MAIL_FROM を書き換える
+ 7. vi /example/path/flashair/bin/config.rb に設定を作る。書き方は flashaird.rb に記載
+ 8. vi /etc/rc.conf に flashaird_enable="YES" を追加する
+ 9. cp /example/path/flashair/etc/flashaird /usr/local/etc/rc.d/. する
+ 10. /usr/local/etc/rc.d/flashaird start する
+ 11. おわり

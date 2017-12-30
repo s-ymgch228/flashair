@@ -1,0 +1,12 @@
+#!/bin/sh
+# PROVIDE: flashaird
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="flashaird"
+command=/mnt/src/flashair/bin/flashaird.rb
+pidfile=/var/run/flashaird.pid
+
+run_rc_command $*
