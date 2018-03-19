@@ -182,8 +182,8 @@ end
 sigint=false
 sigterm=false
 
-Signal.trap("INT"){|signo| sigint=true}
-Signal.trap("TERM"){|signo| sigterm=true}
+Signal.trap("INT"){|signo| sigint=true; raise "signal #{signo}"}
+Signal.trap("TERM"){|signo| sigterm=true; raise "signal #{signo}"}
 
 # daemonize
 Process.daemon if DAEMON
@@ -204,11 +204,10 @@ while running
   end
 
   s = next_min - now
-  if s > 0
-    [1..s].each do
-      break if sigterm or sigint
-      sleep 1
-    end
+  begin
+    sleep s if s > 0
+  rescue => e
+    # do nothing
   end
 
   # terminate
